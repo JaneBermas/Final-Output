@@ -1,0 +1,189 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.border.*;
+import java.io.*;
+
+public class PayrollSystem extends JFrame implements ActionListener {
+
+    // Declare global variables
+    public JTextField eventsDisplay, employeeID, employeeName, hourlyRate, hoursWorked, grossPay, taxRate, taxDeduction, netPay;
+    public JTextArea recordDisplay;
+    String filename = "PayrollDatafile.txt";
+
+    // Constructor to set up the GUI
+    public PayrollSystem() {
+        // Set up the main frame
+        setTitle("Payroll System");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(680, 545);
+        setResizable(false);
+        setLayout(new FlowLayout(FlowLayout.CENTER));
+
+        // Initialize panels
+        JPanel eventsPanel = new JPanel(new BorderLayout());
+        JPanel inputPanel = new JPanel(new BorderLayout());
+        JPanel calculationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel outputPanel = new JPanel(new BorderLayout());
+        JPanel recordsPanel = new JPanel(new BorderLayout());
+
+        // Add borders to the panels
+        inputPanel.setBorder(new LineBorder(Color.BLACK, 1));
+        outputPanel.setBorder(new LineBorder(Color.BLACK, 1));
+        recordsPanel.setBorder(new LineBorder(Color.BLACK, 1));
+
+        // --- START OF eventsPanel COMPONENTS ---
+        eventsDisplay = new JTextField("");
+        eventsDisplay.setEditable(false);
+        eventsDisplay.setHorizontalAlignment(JTextField.CENTER);
+        eventsDisplay.setPreferredSize(new Dimension(getWidth() - 25, 25));
+
+        eventsPanel.add(eventsDisplay);
+        add(eventsPanel);
+        // --- END OF eventsPanel COMPONENTS ---
+
+        // --- START OF inputPanel COMPONENTS ---
+        JPanel textGroup1 = new JPanel(new GridLayout(2, 4, 0, 0)); // 2 rows, 4 columns
+
+        String[] inputTexts = { "Employee ID", "Employee Name", "Hourly Rate (₱)", "Hours Worked (Daily)" };
+
+        // Add labels to the input panel
+        for (String text : inputTexts) {
+            JLabel label = new JLabel(text);
+            label.setHorizontalAlignment(JLabel.CENTER);
+            textGroup1.add(label);
+        }
+
+        employeeID = new JTextField("");
+        employeeName = new JTextField("");
+        hourlyRate = new JTextField("");
+        hoursWorked = new JTextField("");
+
+        JTextField[] textFields = { employeeID, employeeName, hourlyRate, hoursWorked };
+
+        // Add text fields to the input panel
+        for (JTextField field : textFields) {
+            field.setPreferredSize(new Dimension(150, 25));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            panel.add(field);
+            textGroup1.add(panel);
+        }
+
+        inputPanel.add(textGroup1, BorderLayout.NORTH);
+        add(inputPanel);
+        // --- END OF inputPanel COMPONENTS ---
+
+        // --- START OF calculationPanel COMPONENTS ---
+        JButton calculateButton = new JButton("Calculate");
+        calculateButton.addActionListener(this);
+        calculateButton.setFocusPainted(false);
+
+        calculationPanel.add(calculateButton);
+        add(calculationPanel);
+        // --- END OF calculationPanel COMPONENTS ---
+
+        // --- START OF outputPanel COMPONENTS ---
+        JPanel textGroup2 = new JPanel(new GridLayout(2, 6));
+        String[] inputTexts2 = { "Gross Pay (₱)", "Tax Rate (%)", "Tax Deduction", "Net Pay" };
+
+        // Add labels to the output panel
+        for (String text : inputTexts2) {
+            JLabel label = new JLabel(text);
+            label.setHorizontalAlignment(JLabel.CENTER);
+            textGroup2.add(label);
+        }
+
+        grossPay = new JTextField("");
+        taxRate = new JTextField("");
+        taxDeduction = new JTextField("");
+        netPay = new JTextField("");
+
+        JTextField[] textFields2 = { grossPay, taxRate, taxDeduction, netPay };
+
+        // Add text fields to the output panel
+        for (JTextField field : textFields2) {
+            field.setPreferredSize(new Dimension(150, 25));
+            field.setEditable(false);
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            panel.add(field);
+            textGroup2.add(panel);
+        }
+
+        outputPanel.add(textGroup2, BorderLayout.NORTH);
+        add(outputPanel);
+        // --- END OF outputPanel COMPONENTS ---
+
+        // --- START OF recordsPanel COMPONENTS ---
+        recordDisplay = new JTextArea("", 12, 58);
+        recordDisplay.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(recordDisplay);
+        recordsPanel.add(scrollPane, BorderLayout.CENTER);
+        add(recordsPanel);
+        // --- END OF recordsPanel COMPONENTS ---
+
+        // Final setup: show the window
+        setVisible(true);
+
+        // Load data from file
+        try {
+            refreshData();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ActionListener to handle button clicks
+    public void actionPerformed(ActionEvent e) {
+        String command = e.getActionCommand();
+
+        if (command.equals("Calculate")) {
+            calculateRecord();
+            eventsDisplay.setText("Calculations Complete");
+        }
+    }
+
+    // Method to perform payroll calculations
+    public void calculateRecord() {
+        try {
+            double hourlyRateValue = Double.parseDouble(hourlyRate.getText());
+            double hoursWorkedValue = Double.parseDouble(hoursWorked.getText());
+            double grossPayValue = hourlyRateValue * hoursWorkedValue;
+            grossPay.setText(String.valueOf(grossPayValue));
+
+            double taxRateValue = Double.parseDouble(taxRate.getText()) / 100;
+            double taxDeductionValue = grossPayValue * taxRateValue;
+            taxDeduction.setText(String.valueOf(taxDeductionValue));
+
+            double netPayValue = grossPayValue - taxDeductionValue;
+            netPay.setText(String.valueOf(netPayValue));
+        } catch (NumberFormatException ex) {
+            eventsDisplay.setText("Please enter valid numbers for calculation.");
+        }
+    }
+
+    // Refresh the data from the file
+    public void refreshData() throws IOException {
+        File file = new File(filename);
+
+        if (!file.exists()) {
+            return;
+        }
+
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        String history = "";
+
+        while ((line = reader.readLine()) != null) {
+            history += line + System.lineSeparator();
+        }
+
+        reader.close();
+        recordDisplay.setText("Employee ID, Employee Name, Hourly Rate, Hours Worked, Gross Pay (₱), Tax Rate (%), Tax Deduction, Net Pay\n" + history);
+    }
+
+    // Entry point of the program
+    public static void main(String[] args) {
+        new PayrollSystem();
+    }
+}
